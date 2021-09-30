@@ -83,14 +83,21 @@ document.querySelector('#book-form').addEventListener('submit', (e) => {
     const title = document.querySelector('#title').value;
     const author = document.querySelector('#author').value;
     const isbn = document.querySelector('#isbn').value;
-    // once we get the values we want to instantiate a book from the book class
+
+    // we need to validate that all 3 fields are filled in before a new book is added
+    if (title === ' ' || author === ' ' || isbn === ' ') {
+        alert('Please fill in all fields');
+    } else {
+     // once we get the values we want to instantiate a book from the book class
     const book = new Book(title, author, isbn);
     // now we need to add the new book to our list in the UI using addBookToList()
     UI.addBookToList(book);
-});
  // the new book has not been persisted to Local Storage yet
  // after we submit a new book the form fields remain populated - we need to clear them
- UI.clearFields();
+   UI.clearFields();
+    }
+});
+
 
 // we also need an Event to remove a book
 // these Events are in the UI and in Local Storage
