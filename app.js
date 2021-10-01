@@ -9,26 +9,16 @@ class Book {
     }
 }
 
+
 // the UI Class handles UI tasks
 // we make all of the Methods in the UI Class static
 // we start off with a hard coded Array of books stored in a Variable called StoredBooks
 // static class methods are defined on the class itself - you can't call a static method on an Object, only on an Object Class
 class UI {
     static displayBooks() {
-         const StoredBooks = [
-             {
-             title: 'Tycoons War',
-             author: 'Stephen Dando-Collins',
-             isbn: '978-0-306-81856-1'
-             },
-             {
-                 title: 'Oaxaca',
-                 author: 'Cody Copeland',
-                 isbn: '978-1-64049-089-5'
-             }
-         ];
+     
          // set books to the Array
-         const books = StoredBooks;
+         const books = Store.getBooks();
          // loop through the books in the Array - right now they're hard coded but will later be in Local Storage
          // then we want to add the Method addBookToList() in the UI Class
          books.forEach(( book ) => UI.addBookToList(book));
@@ -57,6 +47,21 @@ class UI {
             el.parentElement.parentElement.remove();
         }
     }
+    // create a Bootstrap alert when not all 3 fields are filled out
+    // showAlert() method needs a message and a className so it can be styled
+    // we'll insert the alert right into the HTML (ie. the UI)
+    static showAlert(message, className) {
+        const div = document.createElement('div');
+        div.className = `alert alert-${className}`;
+        div.appendChild(document.createTextNode(message));
+        //get parent element (ie. .container div)
+        const container = document.querySelector('.container');
+        const form = document.querySelector('#book-form');
+        //  insert the div before the form
+        container.insertBefore(div, form);
+        // make the alert only appear for 3 seconds
+        setTimeout(() => document.querySelector('.alert').remove(), 3000);
+    }
     // we need a method to clear form fields after new book data submitted
     static clearFields() {
         document.querySelector('#title').value = ' ';
@@ -65,8 +70,51 @@ class UI {
     }
 }
 
+
+
 // the Store Class takes care of storage - Local Storage (ie. within the browser)
 // the stored data doesn't go away when you refresh the browser or close the page - it stays until it's cleared
+// Local Storage store key:value pairs - you can't store Objects in Local Storage it has to be a String so Objects need to be stringified
+// we use 'static' methods so they can be called directly without having to instantiate the Store class
+class Store {
+    static getBooks() {
+        let books;
+        // check if there's a book item in local storage
+        if (localStorage.getItem('books') === null ) {
+            books = [ ];
+        } else {
+            // book data is stored as a string so we use JSON.parse to get an Array of Objects
+            books = JSON.parse(localStorage.getItem('books'));
+        }
+        return books;
+    }
+
+    static addBook() {
+        const books = Store.getBooks();
+        books.push(book);
+        // reset book to Local Storage
+        // right now 'books' is an Array of Objects not a String - so use JSON.stringify()
+        localStorage.setItem('books', JSON.stringify(books));
+    }
+
+    static removeBook() {
+        // we'll remove a book by its ISBN because it is unique
+        const books = Store.getBooks();
+        // loop through the Array of books with forEach()
+        books.forEach((book, index) => {
+            // check if book currently being looped through has an ISBN that matches
+            // use splice() method to remove the book - 1 = number of books removed
+            if(book.isbn === isbn) {
+                books.splice(index, 1);
+            }
+        });
+        // now we need to reset Local Storage with that book removed
+        localStorage.setItem('books', JSON.stringify(books));
+    }
+}
+
+
+
 
 // we need an Event to display books
 // so call displayBooks()
@@ -86,22 +134,35 @@ document.querySelector('#book-form').addEventListener('submit', (e) => {
 
     // we need to validate that all 3 fields are filled in before a new book is added
     if (title === ' ' || author === ' ' || isbn === ' ') {
-        alert('Please fill in all fields');
+        UI.showAlert('Please fill in all fields', 'danger');
     } else {
      // once we get the values we want to instantiate a book from the book class
     const book = new Book(title, author, isbn);
     // now we need to add the new book to our list in the UI using addBookToList()
     UI.addBookToList(book);
+
+// add book to store
+Store.addBook(book);
+
+// show a 'success' message after a book is properly added to the list
+// showAlert() takes in a message and a className
+UI.showAlert('Book Added', 'success');
+
  // the new book has not been persisted to Local Storage yet
  // after we submit a new book the form fields remain populated - we need to clear them
    UI.clearFields();
     }
 });
 
-
 // we also need an Event to remove a book
 // these Events are in the UI and in Local Storage
 document.querySelector('#book-list').addEventListener('click', (e) => {
     UI.deleteBook(e.target)
+
+  // remove book from store by getting its ISBN
+   Store.removeBook(e.target.parentElement.previousElementSibling.textContent);
+
     // the 'target' event property returns the element that triggered the event
+    // also show a message that a book was deleted
+    UI.showAlert('Book removed', 'success');
 });
